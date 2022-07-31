@@ -11,7 +11,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-image="gary-yolov5-train"
+image="spot-bot-yolov5"
 
 # Get the account number associated with the current IAM credentials
 dst_id=$(aws sts get-caller-identity --query Account --output text)
