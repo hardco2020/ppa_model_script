@@ -38,6 +38,7 @@ aws ecr describe-repositories --repository-names "${image}" --region ${dst_regio
 
 if [ $? -ne 0 ]
 then
+    echo '123'
     aws ecr create-repository --repository-name "${image}" --region ${dst_region}
 fi
 
