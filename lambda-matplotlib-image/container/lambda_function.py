@@ -2,7 +2,7 @@ import json
 import boto3
 import matplotlib.pyplot as plt
 
-def handler(event, context):
+def lambda_handler(event, context):
     metrics_bucket = 'default'
     metrics_filename = 'default'
     model_name = 'default'
