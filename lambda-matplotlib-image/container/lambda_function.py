@@ -15,6 +15,10 @@ def lambda_handler(event, context):
 
     if 'model_name' in event:
         model_name = event['model_name']
+
+    print(metrics_bucket)
+    print(metrics_filename)
+    print(model_name)
         
     s3_client = boto3.client('s3')
     s3_client.download_file(metrics_bucket, metrics_filename, '/tmp/metrics.json')
@@ -68,5 +72,5 @@ def lambda_handler(event, context):
         filename_list[i] = f'{model_name}/{filename_list[i]}'
     
     event['filename'] = filename_list
-    
+    print('hello')
     return event

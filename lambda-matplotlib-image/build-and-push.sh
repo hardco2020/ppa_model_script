@@ -1,6 +1,14 @@
 #!/bin/bash
 set -v
 set -e
+
+if [ "$#" -ne 1 ]; then
+    echo "usage: $0 [role-name]"
+    exit 1
+fi
+
+role_value=$1
+
 image="python39-matplotlib-lambda"
 account=$(aws sts get-caller-identity --query Account --output text)
 region="ap-southeast-1"
@@ -28,3 +36,9 @@ sudo docker push ${fullname}
 
 # Writing the image name to let the calling process extract it without manual intervention:
 # echo "${fullname}" > ecr_image_fullname.txt
+
+aws lambda create-function  \
+--function-name metricToPicture \
+--role  ${role_value} \
+--code ImageUri=${account}.dkr.ecr.ap-southeast-1.amazonaws.com/${image}:latest \
+--package-type Image
