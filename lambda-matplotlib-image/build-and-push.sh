@@ -1,7 +1,7 @@
 #!/bin/bash
 image=python39-matplotlib-lambda
 account=$(aws sts get-caller-identity --query Account --output text)
-region='ap-southeast-1'
+region=ap-southeast-1
 fullname="${account}.dkr.ecr.${region}.amazonaws.com/${image}:latest"
 
 aws ecr describe-repositories --repository-names "${image}" > /dev/null 2>&1
