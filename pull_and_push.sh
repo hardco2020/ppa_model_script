@@ -31,7 +31,7 @@ else
 fi
 
 fullname_src="${src_id}.dkr.ecr.${src_region}.${aws_endpoint}/${image}:latest"
-fullname_dst="public.ecr.aws/x7t7l1d6/trtpt36opengpu"
+fullname_dst="public.ecr.aws/x7t7l1d6/${image}"
 
 # If the repository doesn't exist in ECR, create it.
 aws ecr describe-repositories --repository-names "${image}" --region ${dst_region} || aws ecr create-repository --repository-name "${image}" --region ${dst_region}
