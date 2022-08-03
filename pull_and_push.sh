@@ -43,7 +43,7 @@ then
 fi
 
 aws ecr get-login-password --region ${dst_region} | sudo docker login --username AWS --password-stdin ${dst_id}.dkr.ecr.${dst_region}.${aws_endpoint}
-aws ecr get-login-password --region ${src_region} | sudo docker login --username AWS --password-stdin ${src_id}.dkr.ecr.${src_region}.${aws_endpoint}
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/x7t7l1d6
 
 aws ecr set-repository-policy \
     --repository-name "${image}" \
