@@ -11,7 +11,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-image="gary-yolov5-train"
+image="trtpt36_opengpu"
 
 # Get the account number associated with the current IAM credentials
 dst_id=$(aws sts get-caller-identity --query Account --output text)
@@ -31,7 +31,7 @@ else
 fi
 
 fullname_src="${src_id}.dkr.ecr.${src_region}.${aws_endpoint}/${image}:latest"
-fullname_dst="${dst_id}.dkr.ecr.${dst_region}.${aws_endpoint}/${image}:latest"
+fullname_dst="public.ecr.aws/x7t7l1d6/trtpt36opengpu"
 
 # If the repository doesn't exist in ECR, create it.
 aws ecr describe-repositories --repository-names "${image}" --region ${dst_region} || aws ecr create-repository --repository-name "${image}" --region ${dst_region}
