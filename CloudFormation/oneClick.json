@@ -1,0 +1,287 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",   
+    "Description": "(spot bot) - The AWS CloudFormation template for deployment of the  PPA. Version v1.0.0 (Global)",
+    "Resources": {
+        "RandomParameter": {
+            "Type": "AWS::SSM::Parameter",
+            "Properties": {
+                "Name": "/ppe/random",
+                "Type": "String",
+                "Value": { "Fn::Select" : [ 2, { "Fn::Split" : [ "/", { "Ref" : "AWS::StackId" }] } ] },
+                "Description": "Random parameter for creating s3",
+                "Tags": {
+                    "Environment": "DEV"
+                }
+            }
+        },
+        "SageMakerParameter": {
+            "Type": "AWS::SSM::Parameter",
+            "Properties": {
+                "Name": "/ppe/config/arn",
+                "Type": "String",
+                "Value": { "Fn::GetAtt" : [ "SageMakerRole", "Arn" ] },
+                "Description": "Arn for sagemaker",
+                "Tags": {
+                    "Environment": "DEV"
+                }
+            }
+        },
+        "S3BucketModelCreation":{
+            "Type": "AWS::S3::Bucket",
+            "Properties": { 
+                "BucketName": { "Fn::Join" : [ "-", [ "ppebucket", { "Fn::GetAtt" : [ "RandomParameter", "Value" ] } ] ] },
+                "BucketEncryption": {
+                    "ServerSideEncryptionConfiguration": [
+                      {
+                        "ServerSideEncryptionByDefault": {
+                          "SSEAlgorithm": "AES256"
+                        }
+                      }
+                    ]
+                  }
+            }
+        },
+        "S3BucketModelPretrainCreation":{
+            "Type": "AWS::S3::Bucket",
+            "Properties": { 
+                "BucketName": { "Fn::Join" : [ "-", [ "pretraininput", { "Fn::GetAtt" : [ "RandomParameter", "Value" ] } ] ] }
+            }
+        },
+        "S3BucketModelRetrainCreation":{
+            "Type": "AWS::S3::Bucket",
+            "Properties": { 
+                "BucketName": { "Fn::Join" : [ "-", [ "retrainoutput", { "Fn::GetAtt" : [ "RandomParameter", "Value" ] } ] ] }
+            }
+        },
+        "SageMakerRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "sagemaker.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "sagemaker:*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "iam:*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "s3:*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "ecr:*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "lambda:*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "WebAppSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "webapp-security-group",
+                            "dev"
+                        ]
+                    ]
+                },
+                "GroupDescription": "Allow HTTP/HTTPS and SSH inbound and outbound traffic",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WebAppEIP": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc",
+                "InstanceId": {
+                    "Ref": "BashInstance"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    "webapp-eip",
+                                    "dev"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "BashInstance":{
+            "Type": "AWS::EC2::Instance",
+            "CreationPolicy": {
+                "ResourceSignal": {
+                  "Timeout": "PT2H"
+                }
+            },
+            "Properties": {
+                "AvailabilityZone" : {
+                    "Fn::Select" : [ 
+                      "0", 
+                      { 
+                        "Fn::GetAZs" : { "Ref" : "AWS::Region" }
+                      } 
+                    ]
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "WebAppSecurityGroup"
+                    }
+                ],
+                "KeyName": { "Ref" : "BashKey" },
+                "InstanceType": "t2.micro",
+                "ImageId": "ami-0c802847a7dd848c0",
+                "BlockDeviceMappings" : [
+                    {
+                       "DeviceName" : "/dev/xvda",
+                       "Ebs": {
+                        "VolumeType": "io1",
+                        "Iops": "200",
+                        "VolumeSize": "30"
+                      }
+                    }
+                ],
+                "IamInstanceProfile" : { "Ref" : "BashInstanceProfile"},
+                "UserData":{  
+                    "Fn::Base64" : {
+                        "Fn::Join": [
+                            "", [
+                                "#!/bin/bash\n",
+                                "sudo yum update -y\n",
+                                "sudo yum install git -y\n",
+                                "sudo mkdir /home/ec2-user/ppa\n",
+                                "cd /home/ec2-user/ppa \n",
+                                "sudo git clone https://github.com/hardco2020/ppa_model_script.git /home/ec2-user/ppa/\n",
+                                "aws s3 cp training-input/ s3://", { "Ref" : "S3BucketModelPretrainCreation" }, "/ --recursive\n",
+                                "aws s3 cp panorama-app/ s3://", { "Ref" : "S3BucketPanoramaAppCreation" }, "/ --recursive\n",
+                                "/opt/aws/bin/cfn-signal -e 0 --stack ", { "Ref": "AWS::StackName" },
+                                " --resource BashInstance ",
+                                " --region ", { "Ref" : "AWS::Region" }, "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "BashInstanceProfile":{
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties":{
+                "Roles": [{ "Ref" :  "BashInstanceRole" }]
+            }
+        },
+        "BashInstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com",
+                                    "lambda.amazonaws.com",
+                                    "states.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "ec2:*",
+                                        "ecr:*",
+                                        "ecs:*",
+                                        "s3:*",
+                                        "lambda:*",
+                                        "dynamodb:*",
+                                        "ssm:*"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "BashKey":{
+            "Type": "AWS::EC2::KeyPair",
+            "Properties": {
+                "KeyName": "BashKey"
+            }
+        }
+    }
+}

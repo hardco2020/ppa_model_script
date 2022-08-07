@@ -44,7 +44,7 @@ def ppe_handler(image_to_send, cor_data):
     event_data = {}
 
     event_data["key"] = str(uuid.uuid1())
-    event_data["timestamp"] = time.time()
+    event_data["TimeStamp"] = time.time()
     event_data["bucket"] = bucket
     event_data["prefix"] = prefix
     event_data["acknowledged"] = "false"
@@ -53,7 +53,7 @@ def ppe_handler(image_to_send, cor_data):
     event_data["time"] = eventDate.strftime("%Y-%m-%d %H:%M:%S")
     event_data["location"] = 'TPE'
     event_data["device_id"] = device_id
-    event_data["camera_id"] = camera_id
+    event_data["CameraID"] = camera_id
     event_data["status"] = "unresolve"
     event_data["name"] = "Cordon Line Event"
     event_data["flag"] = "Cordon Line Detecting"
@@ -99,10 +99,14 @@ def ppe_handler(image_to_send, cor_data):
     s3_client.Object(bucket, event_data["label_path"]).put(Body=_label_coordinates, ContentType='text/plain')
 
     payload = json.dumps(event_data)
+    #log.info('End of uploading to S3')
+    log.info('>>>>>>>>>>>>>>> Start sending signal to IOT CORE')
+    # log.info('Sending: ' + payload)
     iot_client.publish(
         topic='ppe/event',
         qos=1,
         payload=bytes(payload, "utf-8"))
+    log.info('End of Sending <<<<<<<<<<<<<')
 
 def cordon_area_detection(payload_obj):
     _cordon_coordinates = payload_obj['cordon_coordinates']
@@ -138,6 +142,7 @@ class PpeIot:
         self.is_detect = {}
 
     def detect_and_report(self, stream_id, bboxes, cordon_area, image_raw):
+        log.info('Start detecting!!!')
         people_cor = []
         label_cor = ''
 
@@ -178,6 +183,7 @@ class PpeIot:
             self.is_detect[stream_id] = False
 
         is_overlap = cordon_area_detection(compareData)
+        # logo.info("OverLap" + is_overlap)
         #is_already_detect = self.is_detect[stream_id]
 
         #log.info(f'is_overlap {str(is_overlap)}')
@@ -193,9 +199,9 @@ class PpeIot:
             self.is_detect[stream_id] = is_overlap
         '''
         
-        if is_overlap :
-            log.info('>>>>>>Processing')
-            log.info('People detected from camera: ' + stream_id)
-            ppe_handler(image_raw, compareData)
-            log.info('<<<<<<End of processing')
-            #self.is_detect[stream_id] = True
+        #if is_overlap :
+        log.info('>>>>>>Processing')
+        log.info('People detected from camera: ' + stream_id)
+        ppe_handler(image_raw, compareData)
+        log.info('<<<<<<End of processing')
+        #self.is_detect[stream_id] = True

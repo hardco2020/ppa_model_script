@@ -33,7 +33,7 @@ log.addHandler(handler)
 class ObjectDetectionApp(p.node):
 
     def __init__(self):
-        self.model_batch_size = 2
+        self.model_batch_size = 1
         self.pre_processing_output_size = 640
         self.onnx_file_path = "/panorama/yolov5s.onnx"
         self.engine_file_path = "/opt/aws/panorama/storage/yolov5s_dynamic_148.engine"

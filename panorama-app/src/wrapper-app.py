@@ -4,8 +4,8 @@ import sys
 import shutil
 
 # Make sure to replace with your own bucket and floder
-target_s3_folder = "src_kai"
-target_s3_bucket = "ppe-example-base-app"
+target_s3_folder = "src"
+target_s3_bucket = "panorama-app"
 homedir = "/opt/aws/panorama/storage/"
 entry_point = "{}/tensorrt_pytorch_panorama.py".format(target_s3_folder)
 

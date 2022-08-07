@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  (spot bot) - The AWS CloudFormation template for deployment of the  PPA.
+  Version v1.0.0 (Global)
+Resources:
+  IotRule:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - iot.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:*"
+                Resource: "*"
+  IotTopic:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: ppeEvent
+      TopicRulePayload:
+        Actions:
+          - DynamoDB:
+              HashKeyField: CameraID
+              HashKeyType: STRING
+              HashKeyValue: ${CameraID}
+              RangeKeyField: TimeStamp
+              RangeKeyType: NUMBER
+              RangeKeyValue: ${TimeStamp()}
+              RoleArn: !GetAtt IotRule.Arn
+              TableName: Event-test
+        Description: Publish IOT topic for Panorama Devices to send alert message to Database
+        Sql: SELECT * FROM 'ppe/event'
