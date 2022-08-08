@@ -1,155 +1,167 @@
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  (spot bot) - The AWS CloudFormation template for deployment of the  PPA.
-  Version v1.0.0 (Global)
+  {"createdOn":"Mac","createdBy":"Amplify","createdWith":"9.1.0","stackType":"custom-customCloudformation","metadata":{}}
+Parameters:
+  env:
+    Type: String
 Resources:
   RandomParameter:
-    Type: "AWS::SSM::Parameter"
+    Type: AWS::SSM::Parameter
     Properties:
       Name: /ppe/random
       Type: String
-      Value: !Select
-        - 2
-        - !Split
-          - /
-          - !Ref "AWS::StackId"
+      Value:
+        Fn::Select:
+          - 2
+          - Fn::Split:
+              - /
+              - Ref: AWS::StackId
       Description: Random parameter for creating s3
       Tags:
         Environment: DEV
   SageMakerParameter:
-    Type: "AWS::SSM::Parameter"
+    Type: AWS::SSM::Parameter
     Properties:
       Name: /ppe/config/arn
       Type: String
-      Value: !GetAtt
-        - SageMakerRole
-        - Arn
+      Value:
+        Fn::GetAtt:
+          - SageMakerRole
+          - Arn
       Description: Arn for sagemaker
       Tags:
         Environment: DEV
   S3BucketModelCreation:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join
-        - "-"
-        - - ppebucket
-          - !GetAtt
-            - RandomParameter
-            - Value
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - ppebucket
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
   S3BucketPanoramaAppCreation:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join
-        - "-"
-        - - panorama-app
-          - !GetAtt
-            - RandomParameter
-            - Value
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - panorama-app
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  S3BucketEventCreation:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - event
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
   S3BucketExportEventCreation:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join
-        - "-"
-        - - event
-          - !GetAtt
-            - RandomParameter
-            - Value
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-  S3BucketExportEventCreation:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      BucketName: !Join
-        - "-"
-        - - export-event
-          - !GetAtt
-            - RandomParameter
-            - Value
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - export-event
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
   S3BucketAppGraphCreation:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join
-        - "-"
-        - - app-graph
-          - !GetAtt
-            - RandomParameter
-            - Value
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - app-graph
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
   S3BucketModelPretrainCreation:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join
-        - "-"
-        - - pretraininput
-          - !GetAtt
-            - RandomParameter
-            - Value
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - pretraininput
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
   S3BucketModelRetrainCreation:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join
-        - "-"
-        - - retrainoutput
-          - !GetAtt
-            - RandomParameter
-            - Value
+      BucketName:
+        Fn::Join:
+          - "-"
+          - - retrainoutput
+            - Fn::GetAtt:
+                - RandomParameter
+                - Value
   SageMakerRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service:
                 - sagemaker.amazonaws.com
             Action:
-              - "sts:AssumeRole"
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: "sagemaker:*"
+                Action: sagemaker:*
                 Resource: "*"
               - Effect: Allow
-                Action: "iam:*"
+                Action: iam:*
                 Resource: "*"
               - Effect: Allow
-                Action: "s3:*"
+                Action: s3:*
                 Resource: "*"
               - Effect: Allow
-                Action: "ecr:*"
+                Action: ecr:*
                 Resource: "*"
               - Effect: Allow
-                Action: "lambda:*"
+                Action: lambda:*
                 Resource: "*"
   WebAppSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
+    Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Join
-        - "-"
-        - - webapp-security-group
-          - dev
+      GroupName:
+        Fn::Join:
+          - "-"
+          - - webapp-security-group
+            - dev
       GroupDescription: Allow HTTP/HTTPS and SSH inbound and outbound traffic
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -165,29 +177,33 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
   WebAppEIP:
-    Type: "AWS::EC2::EIP"
+    Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
-      InstanceId: !Ref BashInstance
+      InstanceId:
+        Ref: BashInstance
       Tags:
         - Key: Name
-          Value: !Join
-            - "-"
-            - - webapp-eip
-              - dev
+          Value:
+            Fn::Join:
+              - "-"
+              - - webapp-eip
+                - dev
   BashInstance:
-    Type: "AWS::EC2::Instance"
+    Type: AWS::EC2::Instance
     CreationPolicy:
       ResourceSignal:
         Timeout: PT2H
     Properties:
-      AvailabilityZone: !Select
-        - "0"
-        - !GetAZs
-          Ref: "AWS::Region"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: AWS::Region
       SecurityGroupIds:
-        - !Ref WebAppSecurityGroup
-      KeyName: !Ref BashKey
+        - Ref: WebAppSecurityGroup
+      KeyName:
+        Ref: BashKey
       InstanceType: t2.micro
       ImageId: ami-0c802847a7dd848c0
       BlockDeviceMappings:
@@ -196,48 +212,59 @@ Resources:
             VolumeType: io1
             Iops: "200"
             VolumeSize: "30"
-      IamInstanceProfile: !Ref BashInstanceProfile
-      UserData: !Base64 
-        'Fn::Join':
-          - ''
-          - - |
-              #!/bin/bash
-            - |
-              sudo yum update -y
-            - |
-              sudo yum install git -y
-            - |
-              sudo mkdir /home/ec2-user/ppa
-            - |
-              cd /home/ec2-user/ppa 
-            - >
-              sudo git clone https://github.com/hardco2020/ppa_model_script.git
-              /home/ec2-user/ppa/
-            - 'aws s3 cp training-input/ s3://'
-            - !Ref S3BucketModelPretrainCreation
-            - |
-              / --recursive
-            - 'aws s3 cp panorama-app/ s3://'
-            - !Ref S3BucketPanoramaAppCreation
-            - |
-              / --recursive
-            - '/opt/aws/bin/cfn-signal -e 0 --stack '
-            - !Ref 'AWS::StackName'
-            - ' --resource BashInstance '
-            - ' --region '
-            - !Ref 'AWS::Region'
-            - |+
+      IamInstanceProfile:
+        Ref: BashInstanceProfile
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - ""
+            - - |
+                #!/bin/bash
+              - |
+                sudo yum update -y
+              - |
+                sudo yum install git -y
+              - |
+                sudo yum install docker -y
+              - |
+                sudo systemctl enable docker
+              - |
+                sudo service docker start
+              - |
+                sudo mkdir /home/ec2-user/ppa
+              - |
+                cd /home/ec2-user/ppa
+              - >
+                sudo git clone
+                https://github.com/hardco2020/ppa_model_script.git
+                /home/ec2-user/ppa/
+              - |
+                bash public_pull_and_push.sh ap-southeast-1
+              - aws s3 cp training-input/ s3://
+              - Ref: S3BucketModelPretrainCreation
+              - |
+                / --recursive
+              - aws s3 cp panorama-app/ s3://
+              - Ref: S3BucketPanoramaAppCreation
+              - |
+                / --recursive
+              - "/opt/aws/bin/cfn-signal -e 0 --stack "
+              - Ref: AWS::StackName
+              - " --resource BashInstance "
+              - " --region "
+              - Ref: AWS::Region
+              - |+
 
   BashInstanceProfile:
-    Type: "AWS::IAM::InstanceProfile"
+    Type: AWS::IAM::InstanceProfile
     Properties:
       Roles:
-        - !Ref BashInstanceRole
+        - Ref: BashInstanceRole
   BashInstanceRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -246,60 +273,60 @@ Resources:
                 - lambda.amazonaws.com
                 - states.amazonaws.com
             Action:
-              - "sts:AssumeRole"
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "ec2:*"
-                  - "ecr:*"
-                  - "ecs:*"
-                  - "s3:*"
-                  - "lambda:*"
-                  - "dynamodb:*"
-                  - "ssm:*"
+                  - ec2:*
+                  - ecr:*
+                  - ecs:*
+                  - s3:*
+                  - lambda:*
+                  - dynamodb:*
+                  - ssm:*
                 Resource: "*"
   BashKey:
-    Type: "AWS::EC2::KeyPair"
+    Type: AWS::EC2::KeyPair
     Properties:
       KeyName: BashKey
   StateMachineRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service:
                 - states.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'ec2:*'
-                  - 'ecr:*'
-                  - 'ecs:*'
-                  - 's3:*'
-                  - 'lambda:*'
-                  - 'dynamodb:*'
-                  - 'ssm:*'
-                Resource: '*'
+                  - ec2:*
+                  - ecr:*
+                  - ecs:*
+                  - s3:*
+                  - lambda:*
+                  - dynamodb:*
+                  - ssm:*
+                Resource: "*"
   LambdaRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -308,43 +335,46 @@ Resources:
                 - lambda.amazonaws.com
                 - states.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'ec2:*'
-                  - 'ecr:*'
-                  - 'ecs:*'
-                  - 's3:*'
-                  - 'lambda:*'
-                  - 'dynamodb:*'
-                  - 'ssm:*'
-                Resource: '*'
+                  - ec2:*
+                  - ecr:*
+                  - ecs:*
+                  - s3:*
+                  - lambda:*
+                  - dynamodb:*
+                  - ssm:*
+                Resource: "*"
   MetricPictrueLambda:
-    Type: 'AWS::Lambda::Function'
+    Type: AWS::Lambda::Function
     Properties:
       Code:
-        ImageUri: !Join 
-          - ''
-          - - !Ref 'AWS::AccountId'
-            - >-
-              .dkr.ecr.ap-southeast-1.amazonaws.com/python39-matplotlib-lambda:latest
+        ImageUri:
+          Fn::Join:
+            - ""
+            - - Ref: AWS::AccountId
+              - >-
+                .dkr.ecr.ap-southeast-1.amazonaws.com/python39-matplotlib-lambda:latest
       PackageType: Image
       FunctionName: metricToPicture
-      Role: !GetAtt 
-        - LambdaRole
-        - Arn
+      Role:
+        Fn::GetAtt:
+          - LambdaRole
+          - Arn
       Timeout: 300
+    DependsOn: BashInstance
   CodeBuildRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -354,58 +384,61 @@ Resources:
                 - states.amazonaws.com
                 - codebuild.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'ecr:*'
-                  - 'panorama:*'
-                  - 's3:*'
-                  - 'lambda:*'
-                  - 'ssm:*'
-                  - 'codebuild:*'
-                  - 'logs:*'
-                  - 'dynamodb:*'
-                  - 'states:*'
-                Resource: '*'
+                  - ecr:*
+                  - panorama:*
+                  - s3:*
+                  - lambda:*
+                  - ssm:*
+                  - codebuild:*
+                  - logs:*
+                  - dynamodb:*
+                  - states:*
+                Resource: "*"
   CodeBuildSourceCredential:
-    Type: 'AWS::CodeBuild::SourceCredential'
+    Type: AWS::CodeBuild::SourceCredential
     Properties:
       AuthType: PERSONAL_ACCESS_TOKEN
       ServerType: GITHUB
       Token: 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
   BuildPanoramaApp:
-    Type: 'AWS::CodeBuild::Project'
+    Type: AWS::CodeBuild::Project
     Properties:
       Name: Build-Panorama-App
       Description: Build Panorama App with Panorama Cli
-      ServiceRole: !GetAtt 
-        - CodeBuildRole
-        - Arn
+      ServiceRole:
+        Fn::GetAtt:
+          - CodeBuildRole
+          - Arn
       Artifacts:
         Type: no_artifacts
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_LARGE
-        Image: 'aws/codebuild/standard:5.0'
-        PrivilegedMode: 'true'
+        Image: aws/codebuild/standard:5.0
+        PrivilegedMode: "true"
       Source:
         BuildSpec: deployment/buildspec.yaml
         Auth:
-          Resource: !Ref CodeBuildSourceCredential
+          Resource:
+            Ref: CodeBuildSourceCredential
           Type: OAUTH
-        Location: 'https://github.com/hardco2020/aws-ppe.git'
+        Location: https://github.com/hardco2020/aws-ppe.git
         Type: GITHUB
       SourceVersion: dev/auto-deploy
   ModelStateMachine:
-    Type: "AWS::StepFunctions::StateMachine"
+    Type: AWS::StepFunctions::StateMachine
     Properties:
-      DefinitionString: !Sub
+      DefinitionString:
+        Fn::Sub:
           - |
             {
               "StartAt": "StartTrainingJobGary",
@@ -549,30 +582,46 @@ Resources:
                 }
               }
             }
-          - AccountId: !Ref AWS::AccountId
-            Resource : arn:aws-cn:states:::lambda:invoke
-      RoleArn: !GetAtt StateMachineRole.Arn
+          - AccountId:
+              Ref: AWS::AccountId
+            Resource: arn:aws-cn:states:::lambda:invoke
+      RoleArn:
+        Fn::GetAtt:
+          - StateMachineRole
+          - Arn
+  StateMachineParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /ppe/state/arn
+      Type: String
+      Value:
+        Fn::GetAtt:
+          - ModelStateMachine
+          - Arn
+      Description: Random parameter for creating s3
+      Tags:
+        Environment: DEV
   IotRule:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service:
                 - iot.amazonaws.com
             Action:
-              - "sts:AssumeRole"
+              - sts:AssumeRole
       Path: /
       Policies:
         - PolicyName: root
           PolicyDocument:
-            Version: 2012-10-17
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "dynamodb:*"
+                  - dynamodb:*
                 Resource: "*"
   IotTopic:
     Type: AWS::IoT::TopicRule
@@ -587,7 +636,12 @@ Resources:
               RangeKeyField: TimeStamp
               RangeKeyType: NUMBER
               RangeKeyValue: ${TimeStamp()}
-              RoleArn: !GetAtt IotRule.Arn
+              RoleArn:
+                Fn::GetAtt:
+                  - IotRule
+                  - Arn
               TableName: Event-test
-        Description: Publish IOT topic for Panorama Devices to send alert message to Database
+        Description: >-
+          Publish IOT topic for Panorama Devices to send alert message to
+          Database
         Sql: SELECT * FROM 'ppe/event'
