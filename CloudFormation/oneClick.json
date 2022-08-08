@@ -140,7 +140,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": "27.0.3.155/32"
                     }
                 ]
             }
@@ -216,7 +216,8 @@
                                 "sudo mkdir /home/ec2-user/ppa\n",
                                 "cd /home/ec2-user/ppa \n",
                                 "sudo git clone https://github.com/hardco2020/ppa_model_script.git /home/ec2-user/ppa/\n",
-                                "bash public_pull_and_push.sh\n",
+                                "bash matlab_pull_and_push.sh ap-southeast-1\n",
+                                "bash gary_pull_and_push.sh ap-southeast-1\n",
                                 "aws s3 cp training-input/ s3://", { "Ref" : "S3BucketModelPretrainCreation" }, "/ --recursive\n",
                                 "aws s3 cp panorama-app/ s3://", { "Ref" : "S3BucketPanoramaAppCreation" }, "/ --recursive\n",
                                 "/opt/aws/bin/cfn-signal -e 0 --stack ", { "Ref": "AWS::StackName" },
