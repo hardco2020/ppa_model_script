@@ -3,9 +3,9 @@ import os
 import sys
 import shutil
 
-# Make sure to replace with your own bucket and floder
+random_p = boto3.client('ssm').get_parameter(Name='/ppe/random')
 target_s3_folder = "src"
-target_s3_bucket = "panorama-app"
+target_s3_bucket = "panorama-app-" + random_p['Parameter']['Value']
 homedir = "/opt/aws/panorama/storage/"
 entry_point = "{}/tensorrt_pytorch_panorama.py".format(target_s3_folder)
 
