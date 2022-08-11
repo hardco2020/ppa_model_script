@@ -27,7 +27,7 @@ log = logging.getLogger('my_logger')
 def ppe_handler(image_to_send, cor_data):
     iot_client = boto3.client('iot-data',region_name='ap-southeast-1')
     s3_client = boto3.resource('s3',region_name='ap-southeast-1')
-    random_p = boto3.client('ssm').get_parameter(Name='/ppe/random')
+    random_p = boto3.client('ssm',region_name='ap-southeast-1').get_parameter(Name='/ppe/random')
     prefix = 'ppe'
     #device_id = 'cf2533b6-2541-4347-a68c-404742578e14'
     #camera_id = 'cf2533b6-2541-4347-a68c-404742578e14'
