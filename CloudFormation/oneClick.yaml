@@ -4,7 +4,19 @@ Description: >-
 Parameters:
   env:
     Type: String
+    Default: dev
+    Description: Please input your amplify env name !!!
 Resources:
+  EnvParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /ppe/env
+      Type: String
+      Value:
+        Ref: env
+      Description: Env Variable
+      Tags:
+        Environment: DEV
   RandomParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -212,48 +224,49 @@ Resources:
             VolumeType: io1
             Iops: "200"
             VolumeSize: "30"
+            Encrypted: "true"
       IamInstanceProfile:
         Ref: BashInstanceProfile
-      UserData:
-        Fn::Base64:
-          Fn::Join:
-            - ""
-            - - |
-                #!/bin/bash
-              - |
-                sudo yum update -y
-              - |
-                sudo yum install git -y
-              - |
-                sudo yum install docker -y
-              - |
-                sudo systemctl enable docker
-              - |
-                sudo service docker start
-              - |
-                sudo mkdir /home/ec2-user/ppa
-              - |
-                cd /home/ec2-user/ppa
-              - >
-                sudo git clone
-                https://github.com/hardco2020/ppa_model_script.git
-                /home/ec2-user/ppa/
-              - |
-                bash public_pull_and_push.sh ap-southeast-1
-              - aws s3 cp training-input/ s3://
-              - Ref: S3BucketModelPretrainCreation
-              - |
-                / --recursive
-              - aws s3 cp panorama-app/ s3://
-              - Ref: S3BucketPanoramaAppCreation
-              - |
-                / --recursive
-              - "/opt/aws/bin/cfn-signal -e 0 --stack "
-              - Ref: AWS::StackName
-              - " --resource BashInstance "
-              - " --region "
-              - Ref: AWS::Region
-              - |+
+      UserData: !Base64
+        "Fn::Join":
+          - ""
+          - - |
+              #!/bin/bash
+            - |
+              sudo yum update -y
+            - |
+              sudo yum install git -y
+            - |
+              sudo yum install docker -y
+            - |
+              sudo systemctl enable docker
+            - |
+              sudo service docker start
+            - |
+              sudo mkdir /home/ec2-user/ppa
+            - |
+              cd /home/ec2-user/ppa
+            - >
+              sudo git clone https://github.com/hardco2020/ppa_model_script.git
+              /home/ec2-user/ppa/
+            - |
+              bash matlab_pull_and_push.sh ap-southeast-1
+            - |
+              bash gary_pull_and_push.sh ap-southeast-1
+            - "aws s3 cp training-input/ s3://"
+            - !Ref S3BucketModelPretrainCreation
+            - |
+              / --recursive
+            - "aws s3 cp panorama-app/ s3://"
+            - !Ref S3BucketPanoramaAppCreation
+            - |
+              / --recursive
+            - "/opt/aws/bin/cfn-signal -e 0 --stack "
+            - !Ref "AWS::StackName"
+            - " --resource BashInstance "
+            - " --region "
+            - !Ref "AWS::Region"
+            - |+
 
   BashInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -437,6 +450,7 @@ Resources:
   ModelStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
+      StateMachineName: Retrain
       DefinitionString:
         Fn::Sub:
           - |
@@ -449,7 +463,7 @@ Resources:
                   "OutputPath": "$.Payload",
                   "Parameters": {
                     "Payload.$": "$",
-                    "FunctionName": "arn:aws:lambda:ap-southeast-1:${AccountId}:function:createTrainingJob-test:$LATEST"
+                    "FunctionName": "arn:aws:lambda:ap-southeast-1:${AccountId}:function:createTrainingJob-${Env}:$LATEST"
                   },
                   "Retry": [
                     {
@@ -471,7 +485,7 @@ Resources:
                   "OutputPath": "$.Payload",
                   "Parameters": {
                     "Payload.$": "$",
-                    "FunctionName":"arn:aws:lambda:ap-southeast-1:${AccountId}:function:checkTrainingJobStatus-test:$LATEST"
+                    "FunctionName":"arn:aws:lambda:ap-southeast-1:${AccountId}:function:checkTrainingJobStatus-${Env}:$LATEST"
                   },
                   "Retry": [
                     {
@@ -509,7 +523,7 @@ Resources:
                   "OutputPath": "$.Payload",
                   "Parameters": {
                     "Payload.$": "$",
-                    "FunctionName": "arn:aws:lambda:ap-southeast-1:${AccountId}:function:ppaUploadMetricsToS3-test:$LATEST"
+                    "FunctionName": "arn:aws:lambda:ap-southeast-1:${AccountId}:function:ppaUploadMetricsToS3-${Env}:$LATEST"
                   },
                   "Retry": [
                     {
@@ -551,7 +565,7 @@ Resources:
                   "Type": "Task",
                   "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
                   "Parameters": {
-                    "FunctionName": "arn:aws:lambda:ap-southeast-1:${AccountId}:function:triggerCodeBuild-test:$LATEST",
+                    "FunctionName": "arn:aws:lambda:ap-southeast-1:${AccountId}:function:triggerCodeBuild-${Env}:$LATEST",
                     "Payload": {
                       "token.$": "$$.Task.Token",
                       "otherInput.$": "$"
@@ -584,6 +598,8 @@ Resources:
             }
           - AccountId:
               Ref: AWS::AccountId
+            Env:
+              Ref: env
             Resource: arn:aws-cn:states:::lambda:invoke
       RoleArn:
         Fn::GetAtt:
@@ -640,7 +656,11 @@ Resources:
                 Fn::GetAtt:
                   - IotRule
                   - Arn
-              TableName: Event-test
+              TableName:
+                Fn::Join:
+                  - "-"
+                  - - "Event"
+                    - !Ref env
         Description: >-
           Publish IOT topic for Panorama Devices to send alert message to
           Database

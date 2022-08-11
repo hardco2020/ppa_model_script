@@ -3,7 +3,7 @@ import os
 import sys
 import shutil
 
-random_p = boto3.client('ssm').get_parameter(Name='/ppe/random')
+random_p = boto3.client('ssm',region_name='ap-southeast-1').get_parameter(Name='/ppe/random')
 target_s3_folder = "src"
 target_s3_bucket = "panorama-app-" + random_p['Parameter']['Value']
 homedir = "/opt/aws/panorama/storage/"
